@@ -7,15 +7,13 @@ import java.io.IOException
 import java.io.InputStreamReader
 
 class TinybController
-// --------------------
-// Constructors
-// --------------------
 
 private constructor() {
 
     // --------------------
     // Methods
     // --------------------
+
 
     @Throws(InterruptedException::class)
     fun scanDevices(manager: BluetoothManager): List<BluetoothDevice> {
@@ -37,34 +35,6 @@ private constructor() {
         return manager.devices
     }
 
-    fun showDevices(devices: List<BluetoothDevice>) {
-        var i = 0
-        for (device in devices) {
-            if (device.connected) {
-                println(ANSI_GREEN + "#" + ++i + ANSI_RESET + " " + device.address + " " + device.name + " " + device.connected)
-            } else {
-                println(ANSI_RED + "#" + ++i + ANSI_RESET + " " + device.address + " " + device.name + " " + device.connected)
-            }
-        }
-    }
-
-    @Throws(IOException::class)
-    fun selectAction(): EAction {
-        println("\nSelect an action")
-        val br = BufferedReader(InputStreamReader(System.`in`))
-
-        while (true) {
-            val input = br.readLine()
-
-            if (input.toLowerCase().startsWith("c")) {
-                return EAction.CONNECT
-            } else if (input.toLowerCase().startsWith("d")) {
-                return EAction.DISCONNECT
-            }
-        }
-    }
-
-    @Throws(IOException::class)
     fun selectDevice(devices: List<BluetoothDevice>): BluetoothDevice {
         println("\nSelect a device")
         val br = BufferedReader(InputStreamReader(System.`in`))
@@ -84,6 +54,30 @@ private constructor() {
             }
 
             return devices[pickedDeviceID - 1]
+        }
+    }
+
+    fun selectAction(): EAction {
+        println("\nSelect an action")
+        println("  [C]onnect")
+        println("  [D]isconnect")
+        println("  [P]air")
+        println("  [F]ind service")
+        println("  [S]how services")
+        println("  [Q]uit")
+        val br = BufferedReader(InputStreamReader(System.`in`))
+
+        while (true) {
+            val input = br.readLine().toLowerCase().substring(0,1)
+
+            when (input) {
+                "c" -> return EAction.CONNECT
+                "d" -> return EAction.DISCONNECT
+                "p" -> return EAction.PAIR
+                "f" -> return EAction.FIND_SERVICE
+                "s" -> return EAction.SHOW_SERVICES
+                "q" -> return EAction.QUIT
+            }
         }
     }
 
@@ -109,13 +103,34 @@ private constructor() {
         }
     }
 
-    @Throws(InterruptedException::class)
+    fun pairDevice(device: BluetoothDevice) {
+        device.pair()
+    }
+
+    fun findService(device: BluetoothDevice) {
+        val br = BufferedReader(InputStreamReader(System.`in`))
+        val input = br.readLine()
+
+        device.find(input)
+    }
+
+    fun showDevices(devices: List<BluetoothDevice>) {
+        var i = 0
+        for (device in devices) {
+            if (device.connected) {
+                println(ANSI_GREEN + "#" + ++i + ANSI_RESET + " " + device.address + " " + device.name + " " + device.connected)
+            } else {
+                println(ANSI_RED + "#" + ++i + ANSI_RESET + " " + device.address + " " + device.name + " " + device.connected)
+            }
+        }
+    }
+
     fun showServices(device: BluetoothDevice) {
         println("Wait for services")
 
         var bluetoothServices: List<BluetoothGattService>
 
-        do {
+        for (i in 1..10) {
             bluetoothServices = device.services
 
             for (service in bluetoothServices) {
@@ -126,7 +141,7 @@ private constructor() {
             }
             print(".")
             Thread.sleep(1000)
-        } while (bluetoothServices.isEmpty())
+        }
     }
 
     companion object {

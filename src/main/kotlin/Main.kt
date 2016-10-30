@@ -12,14 +12,17 @@ fun main(args: Array<String>) {
 
     tinybController.showDevices(devices)
 
-    val action = tinybController.selectAction()
     val device = tinybController.selectDevice(devices)
 
-    when (action) {
-        EAction.CONNECT -> tinybController.connectDevice(device)
-        EAction.DISCONNECT -> tinybController.disconnectDevice(device)
-    }
-
-    tinybController.showDevices(devices)
-    tinybController.showServices(device)
+    do {
+        var action = tinybController.selectAction()
+        when (action) {
+            EAction.CONNECT -> tinybController.connectDevice(device)
+            EAction.DISCONNECT -> tinybController.disconnectDevice(device)
+            EAction.PAIR -> tinybController.pairDevice(device)
+            EAction.FIND_SERVICE -> tinybController.findService(device)
+            EAction.SHOW_SERVICES -> tinybController.showServices(device)
+            EAction.QUIT -> println("Byebye")
+        }
+    } while (action != EAction.QUIT);
 }
