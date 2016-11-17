@@ -1,5 +1,8 @@
 package de.interoberlin.tinyb_playground
 
+import parser.BleDataParser
+import repository.ECharacteristic
+import repository.EDevice
 import tinyb.*
 
 import java.io.BufferedReader
@@ -7,7 +10,6 @@ import java.io.IOException
 import java.io.InputStreamReader
 
 class TinybController
-
 private constructor() {
 
     // --------------------
@@ -64,11 +66,12 @@ private constructor() {
         println("  [P]air")
         println("  [F]ind service")
         println("  [S]how services")
+        println("  [R]ead characteristic")
         println("  [Q]uit")
         val br = BufferedReader(InputStreamReader(System.`in`))
 
         while (true) {
-            val input = br.readLine().toLowerCase().substring(0,1)
+            val input = br.readLine().toLowerCase().substring(0, 1)
 
             when (input) {
                 "c" -> return EAction.CONNECT
@@ -76,6 +79,7 @@ private constructor() {
                 "p" -> return EAction.PAIR
                 "f" -> return EAction.FIND_SERVICE
                 "s" -> return EAction.SHOW_SERVICES
+                "r" -> return EAction.READ_CHARACTERISTIC
                 "q" -> return EAction.QUIT
             }
         }
@@ -133,15 +137,39 @@ private constructor() {
         for (i in 1..10) {
             bluetoothServices = device.services
 
-            for (service in bluetoothServices) {
-                println("Service " + service.uuid)
-                for (characteristic in service.characteristics) {
-                    println("Characteristic " + ANSI_PURPLE + characteristic.uuid + ANSI_RESET)
+            if (bluetoothServices.isEmpty()) {
+                print(".")
+                Thread.sleep(1000)
+            } else {
+                for (service in bluetoothServices) {
+                    println("Service " + service.uuid)
+                    for (characteristic in service.characteristics) {
+                        println("Characteristic " + ANSI_PURPLE + characteristic.uuid + ANSI_RESET)
+                    }
+                }
+
+                break;
+            }
+        }
+    }
+
+    fun readCharacteristic(device: BluetoothDevice) {
+        println("Select characteristic to read")
+
+        val br = BufferedReader(InputStreamReader(System.`in`))
+        val input = br.readLine()
+
+        for (service in device.services) {
+            for (characteristic in service.characteristics) {
+                if (input == characteristic.uuid) {
+                    val batteryLevel = BleDataParser.getFormattedValue(null, ECharacteristic.BATTERY_LEVEL, characteristic.readValue())
+                    print("Characteristic ${characteristic.uuid} : ${ANSI_YELLOW}${batteryLevel}${ANSI_RESET}")
+                    return
                 }
             }
-            print(".")
-            Thread.sleep(1000)
         }
+
+        println("Characteristic with UUID ${input} not found")
     }
 
     companion object {
@@ -151,7 +179,7 @@ private constructor() {
         // private static final String ANSI_BLACK = "\u001B[30m";
         private val ANSI_RED = "\u001B[31m"
         private val ANSI_GREEN = "\u001B[32m"
-        // private static final String ANSI_YELLOW = "\u001B[33m";
+        private val ANSI_YELLOW = "\u001B[33m";
         // private static final String ANSI_BLUE = "\u001B[34m";
         private val ANSI_PURPLE = "\u001B[35m"
         // private static final String ANSI_CYAN = "\u001B[36m";
