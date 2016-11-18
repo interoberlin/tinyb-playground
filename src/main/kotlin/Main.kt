@@ -23,6 +23,7 @@ fun main(args: Array<String>) {
             EAction.FIND_SERVICE -> tinybController.findService(device)
             EAction.SHOW_SERVICES -> tinybController.showServices(device)
             EAction.READ_CHARACTERISTIC -> tinybController.readCharacteristic(device);
+            EAction.WRITE_CHARACTERISTIC -> tinybController.writeCharacteristic(device);
             EAction.QUIT -> println("Byebye")
         }
     } while (action != EAction.QUIT);

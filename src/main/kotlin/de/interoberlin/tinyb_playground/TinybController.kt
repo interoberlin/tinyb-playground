@@ -2,11 +2,11 @@ package de.interoberlin.tinyb_playground
 
 import parser.BleDataParser
 import repository.ECharacteristic
-import repository.EDevice
-import tinyb.*
-
+import tinyb.BluetoothDevice
+import tinyb.BluetoothException
+import tinyb.BluetoothGattService
+import tinyb.BluetoothManager
 import java.io.BufferedReader
-import java.io.IOException
 import java.io.InputStreamReader
 
 class TinybController
@@ -67,6 +67,7 @@ private constructor() {
         println("  [F]ind service")
         println("  [S]how services")
         println("  [R]ead characteristic")
+        println("  [W]rite characteristic")
         println("  [Q]uit")
         val br = BufferedReader(InputStreamReader(System.`in`))
 
@@ -80,6 +81,7 @@ private constructor() {
                 "f" -> return EAction.FIND_SERVICE
                 "s" -> return EAction.SHOW_SERVICES
                 "r" -> return EAction.READ_CHARACTERISTIC
+                "w" -> return EAction.WRITE_CHARACTERISTIC
                 "q" -> return EAction.QUIT
             }
         }
@@ -164,6 +166,34 @@ private constructor() {
                 if (input == characteristic.uuid) {
                     val batteryLevel = BleDataParser.getFormattedValue(null, ECharacteristic.BATTERY_LEVEL, characteristic.readValue())
                     print("Characteristic ${characteristic.uuid} : ${ANSI_YELLOW}${batteryLevel}${ANSI_RESET}")
+                    return
+                }
+            }
+        }
+
+        println("Characteristic with UUID ${input} not found")
+    }
+
+    fun writeCharacteristic(device: BluetoothDevice) {
+        println("Select characteristic to write")
+
+        val br = BufferedReader(InputStreamReader(System.`in`))
+        val input = br.readLine()
+
+        for (service in device.services) {
+            for (characteristic in service.characteristics) {
+                if (input == characteristic.uuid) {
+
+                    println(String.format("%8s", Integer.toBinaryString(byteArrayOf(0x01)[0].toInt()).replace(' ', '0')))
+                    println(String.format("%8s", Integer.toBinaryString(byteArrayOf(1.toByte())[0].toInt()).replace(' ', '0')))
+
+                    if (!device.connected) device.connect()
+                    val success = characteristic.writeValue(byteArrayOf(0x01))
+
+                    if (!device.connected) device.connect()
+                    val s = characteristic.writeValue(byteArrayOf(1.toByte()))
+
+                    println(if (success) "Characteristic ${characteristic.uuid} :${ANSI_YELLOW}0x01${ANSI_RESET}" else "Write failed")
                     return
                 }
             }
