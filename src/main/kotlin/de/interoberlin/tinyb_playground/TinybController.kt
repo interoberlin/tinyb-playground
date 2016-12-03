@@ -1,5 +1,6 @@
 package de.interoberlin.tinyb_playground
 
+import de.interoberlin.tinyb_playground.TextColor.Companion.ANSI_RESET
 import parser.BleDataParser
 import repository.ECharacteristic
 import tinyb.*
@@ -15,20 +16,7 @@ private constructor() : BluetoothNotification<ByteArray> {
     // <editor-fold defaultstate="collapsed" desc="Companion object">
 
     companion object {
-        private val SCAN_DURATION = 5
-
-        private val ANSI_RESET = "\u001B[0m"
-        private val ANSI_RED = "\u001B[31m"
-        private val ANSI_GREEN = "\u001B[32m"
-        private val ANSI_YELLOW = "\u001B[33m"
-        private val ANSI_PURPLE = "\u001B[35m"
-        private val ANSI_CYAN = "\u001B[36m"
-
-        private val DEBUG = "${ANSI_CYAN}DEBUG$ANSI_RESET"
-        private val INFO = "$ANSI_GREEN INFO$ANSI_RESET"
-        // private val WARN = "$ANSI_YELLOW WARN$ANSI_RESET"
-        private val ERROR = "${ANSI_RED}ERROR$ANSI_RESET"
-        private val INPUT = "${ANSI_PURPLE}INPUT$ANSI_RESET"
+        private val SCAN_DURATION = 2
 
         private var inst: TinybController? = null
 
@@ -93,8 +81,14 @@ private constructor() : BluetoothNotification<ByteArray> {
     @Throws(InterruptedException::class)
     fun scanDevices(): List<BluetoothDevice> {
         val manager = BluetoothManager.getBluetoothManager()
-        manager.startDiscovery()
-        println("$INFO Start scan")
+        try {
+            manager.startDiscovery()
+        } catch(e: BluetoothException) {
+            println(TextColor.ERROR + "$e")
+            return emptyList()
+        }
+
+        println(TextColor.INFO + "Start scan")
         print("      ")
 
         for (i in 0..SCAN_DURATION - 1) {
@@ -105,7 +99,7 @@ private constructor() : BluetoothNotification<ByteArray> {
         try {
             manager.stopDiscovery()
         } catch (e: BluetoothException) {
-            println("$ERROR Discovery could not be stopped.")
+            println(TextColor.ERROR + "Discovery could not be stopped.")
         }
         println("")
 
@@ -114,15 +108,15 @@ private constructor() : BluetoothNotification<ByteArray> {
     }
 
     fun showDevices(devices: List<BluetoothDevice>) {
-        println("$INFO Show devices")
+        println(TextColor.INFO + "Show devices")
         var i = 0
         for (device in devices) {
-            println("      " + if (device.connected) ANSI_GREEN else ANSI_RED + "# ${++i} $ANSI_RESET ${device.address} ${device.name} ${device.connected}")
+            println("      " + if (device.connected) TextColor.ANSI_GREEN else TextColor.ANSI_RED + "# ${++i} $ANSI_RESET ${device.address} ${device.name} ${device.connected}")
         }
     }
 
     fun selectDevice(devices: List<BluetoothDevice>): BluetoothDevice {
-        println("$INFO Select a device")
+        println(TextColor.INFO + "Select a device")
 
         val input = BufferedReader(InputStreamReader(System.`in`)).readLine()
         var pickedDeviceID: Int
@@ -131,12 +125,12 @@ private constructor() : BluetoothNotification<ByteArray> {
             try {
                 pickedDeviceID = Integer.parseInt(input)
             } catch (e: NumberFormatException) {
-                println("$ERROR '$input' is not a number")
+                println(TextColor.ERROR + "'$input' is not a number")
                 continue
             }
 
             if (pickedDeviceID > devices.size) {
-                println("$ERROR '$pickedDeviceID' is not in range")
+                println(TextColor.ERROR + "'$pickedDeviceID' is not in range")
                 continue
             }
 
@@ -149,30 +143,35 @@ private constructor() : BluetoothNotification<ByteArray> {
     // <editor-fold defaultstate="collapsed" desc="Methods connection">
 
     fun connectDevice(device: BluetoothDevice) {
-        println("$INFO Connect device ${device.address} ${device.name}")
-        if (device.connect()) {
-            println("$DEBUG Paired : ${device.paired}")
-            println("$DEBUG Trusted: ${device.trusted}")
-        } else {
-            println("$ERROR Could not connect device")
-            System.exit(-1)
+        println(TextColor.INFO + "Connect device ${device.address} ${device.name}")
+        try {
+            if (device.connect()) {
+                println(TextColor.DEBUG + "Paired : ${device.paired}")
+                println(TextColor.DEBUG + "Trusted: ${device.trusted}")
+            } else {
+                println(TextColor.ERROR + "Could not connect device")
+                System.exit(-1)
+            }
+        } catch(e: BluetoothException) {
+            println(TextColor.ERROR + "$e")
         }
     }
 
     fun disconnectDevice(device: BluetoothDevice) {
-        println("$INFO Disconnect device ${device.address} ${device.name}")
+        println(TextColor.INFO + "Disconnect device ${device.address} ${device.name}")
         if (!device.disconnect()) {
-            println("$ERROR Could not disconnect device")
+            println(TextColor.ERROR + "Could not disconnect device")
         }
     }
 
     fun pairDevice(device: BluetoothDevice) {
-        println("$INFO Pair device ${device.address} ${device.name}")
+        println(TextColor.INFO + "Pair device ${device.address} ${device.name}")
+        ensureConnection(device)
         device.pair()
     }
 
     fun findService(device: BluetoothDevice) {
-        println("$INFO Find service")
+        println(TextColor.INFO + "Find service")
         val br = BufferedReader(InputStreamReader(System.`in`))
         val input = br.readLine()
 
@@ -180,18 +179,19 @@ private constructor() : BluetoothNotification<ByteArray> {
     }
 
     fun showServices(device: BluetoothDevice) {
-        println("$INFO Show service")
+        println(TextColor.INFO + "Show service")
 
         var bluetoothServices: List<BluetoothGattService>
 
         for (i in 1..10) {
-            if (!device.connected) device.connect()
+            ensureConnection(device)
+
             bluetoothServices = device.services
 
             for (service in bluetoothServices) {
                 println("     Service " + service.uuid)
                 for (characteristic in service.characteristics) {
-                    println("      Characteristic " + ANSI_CYAN + characteristic.uuid + ANSI_RESET)
+                    println("      Characteristic ${TextColor.ANSI_CYAN} characteristic.uuid + ${TextColor.ANSI_RESET}")
                 }
             }
         }
@@ -202,7 +202,7 @@ private constructor() : BluetoothNotification<ByteArray> {
     // <editor-fold defaultstate="collapsed" desc="Methods communication">
 
     fun readCharacteristic(device: BluetoothDevice) {
-        println("$INPUT Select characteristic to read")
+        println("$TextColor.INPUT Select characteristic to read")
 
         val br = BufferedReader(InputStreamReader(System.`in`))
         val input = br.readLine()
@@ -210,19 +210,20 @@ private constructor() : BluetoothNotification<ByteArray> {
         for (service in device.services) {
             for (characteristic in service.characteristics) {
                 if (input == characteristic.uuid) {
-                    if (!device.connected) device.connect()
+                    ensureConnection(device)
+
                     val batteryLevel = BleDataParser.getFormattedValue(null, ECharacteristic.BATTERY_LEVEL, characteristic.readValue())
-                    print("Characteristic $characteristic.uuid : $ANSI_YELLOW$batteryLevel$ANSI_RESET")
+                    print("Characteristic $characteristic.uuid : $TextColor.ANSI_YELLOW$batteryLevel$TextColor.ANSI_RESET")
                     return
                 }
             }
         }
 
-        println("$ERROR Characteristic with UUID $input not found")
+        println(TextColor.ERROR + "Characteristic with UUID $input not found")
     }
 
     fun writeCharacteristic(device: BluetoothDevice) {
-        println("$INPUT Select characteristic to write")
+        println("$TextColor.INPUT Select characteristic to write")
 
         val br = BufferedReader(InputStreamReader(System.`in`))
         val input = br.readLine()
@@ -230,42 +231,52 @@ private constructor() : BluetoothNotification<ByteArray> {
         for (service in device.services) {
             for (characteristic in service.characteristics) {
                 if (characteristic.uuid == input || characteristic.uuid.contains(input)) {
-                    if (!device.connected) device.connect()
-                    val success = characteristic.writeValue(byteArrayOf(0x01))
-
-                    println(if (success) "Characteristic ${characteristic.uuid} :${ANSI_YELLOW}0x01$ANSI_RESET" else "Write failed")
-                    return
+                    writeCharacteristic(device, characteristic, byteArrayOf(0x01))
                 }
             }
         }
 
-        println("$ERROR Characteristic with UUID $input not found")
+        println(TextColor.ERROR + "Characteristic with UUID $input not found")
+    }
+
+    /**
+     * Write an array of @param bytes into the specified @param characteristic of a @param device
+     */
+    fun writeCharacteristic(device: BluetoothDevice, characteristic: BluetoothGattCharacteristic, bytes: ByteArray) {
+        ensureConnection(device)
+        try {
+            val success = characteristic.writeValue(bytes)
+            println(if (success) "Characteristic ${characteristic.uuid} :" + TextColor.ANSI_YELLOW + "PING" + TextColor.ANSI_RESET else "Write failed")
+        } catch(e: BluetoothException) {
+            println(TextColor.ERROR + "$e")
+        }
     }
 
     fun subscribeCharacteristic(device: BluetoothDevice): BluetoothGattCharacteristic? {
-        println("$INPUT Select characteristic to subscribe")
+        println("$TextColor.INPUT Select characteristic to subscribe")
 
         val br = BufferedReader(InputStreamReader(System.`in`))
         val input = br.readLine()
 
+        println("$TextColor.DEBUG services ${device.services.size}")
         for (service in device.services) {
+            println("$TextColor.DEBUG   characteristic ${service.characteristics.size}")
             for (characteristic in service.characteristics) {
-                if (input == characteristic.uuid) {
-                    if (characteristic.uuid == input || characteristic.uuid.contains(input)) {
-                        if (!device.connected) device.connect()
-                        characteristic.enableValueNotifications(this)
-                        device.enableConnectedNotifications({
-                            println("$INFO Connected")
-                        })
+                if (characteristic.uuid == input || characteristic.uuid.contains(input)) {
+                    ensureConnection(device)
 
-                        println("$INFO Characteristic ${characteristic.uuid} subscribed")
-                        return characteristic
-                    }
+                    characteristic.enableValueNotifications(this)
+                    device.enableConnectedNotifications({
+                        println(TextColor.INFO + "Connected because of subscription")
+                    })
+
+                    println(TextColor.INFO + "Characteristic ${characteristic.uuid} subscribed")
+                    return characteristic
                 }
             }
         }
 
-        println("$ERROR Characteristic with UUID $input not found")
+        println(TextColor.ERROR + "Characteristic with UUID $input not found")
         return null
     }
 
@@ -274,9 +285,26 @@ private constructor() : BluetoothNotification<ByteArray> {
             for (c in s.characteristics) {
                 if (c.uuid == characteristic.uuid) {
                     characteristic.disableValueNotifications()
-                    println("$INPUT Characteristic ${characteristic.uuid} ${ANSI_YELLOW}unsubscribed$ANSI_RESET")
+                    println("$TextColor.INPUT Characteristic ${characteristic.uuid} ${TextColor.ANSI_YELLOW}unsubscribed$TextColor.ANSI_RESET")
                 }
             }
+        }
+    }
+
+    fun ensureConnection(device: BluetoothDevice) {
+        try {
+            while (!device.connected) {
+                device.connect()
+                if (!device.connected) {
+                    print(".")
+                    Thread.sleep(1000)
+                } else {
+                    println(TextColor.INFO + "Connected")
+                    break
+                }
+            }
+        } catch(e: BluetoothException) {
+            println(TextColor.ERROR + "$e")
         }
     }
 
@@ -289,7 +317,7 @@ private constructor() : BluetoothNotification<ByteArray> {
     // <editor-fold defaultstate="collapsed" desc="Callback interfaces">
 
     override fun run(value: ByteArray?) {
-        println("$INFO PING")
+        println(TextColor.INFO + "PING")
     }
 
 // </editor-fold>

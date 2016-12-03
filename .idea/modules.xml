@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/tiny-playground.iml" filepath="$PROJECT_DIR$/.idea/modules/tiny-playground.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/tiny-playground_main.iml" filepath="$PROJECT_DIR$/.idea/modules/tiny-playground_main.iml" group="tiny-playground" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/tiny-playground_test.iml" filepath="$PROJECT_DIR$/.idea/modules/tiny-playground_test.iml" group="tiny-playground" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/tinyb-playground-blinky.iml" filepath="$PROJECT_DIR$/.idea/modules/tinyb-playground-blinky.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/tinyb-playground-blinky_main.iml" filepath="$PROJECT_DIR$/.idea/modules/tinyb-playground-blinky_main.iml" group="tinyb-playground-blinky" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/tinyb-playground-blinky_test.iml" filepath="$PROJECT_DIR$/.idea/modules/tinyb-playground-blinky_test.iml" group="tinyb-playground-blinky" />
     </modules>
   </component>
 </project>
