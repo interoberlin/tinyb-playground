@@ -29,15 +29,12 @@ fun main(args: Array<String>) {
     println(TextColor.INFO + "Start sending values")
     while (true) {
         Thread.sleep(2000)
-        // Turn off LEDs
-        tinybController.writeCharacteristic(device, characteristic, byteArrayOf(0.toByte(), 0.toByte(), 0.toByte(), 0.toByte(), 0.toByte()))
-        tinybController.writeCharacteristic(device, characteristic, byteArrayOf(0.toByte(), 1.toByte(), 0.toByte(), 0.toByte(), 0.toByte()))
-        tinybController.writeCharacteristic(device, characteristic, byteArrayOf(0.toByte(), 2.toByte(), 0.toByte(), 0.toByte(), 0.toByte()))
-        // Turn on LEDs
-        Thread.sleep(2000)
-        tinybController.writeCharacteristic(device, characteristic, byteArrayOf(0.toByte(), 0.toByte(), 255.toByte(), 100.toByte(), 50.toByte()))
-        tinybController.writeCharacteristic(device, characteristic, byteArrayOf(0.toByte(), 1.toByte(), 100.toByte(), 50.toByte(), 255.toByte()))
-        tinybController.writeCharacteristic(device, characteristic, byteArrayOf(0.toByte(), 2.toByte(), 50.toByte(), 255.toByte(), 100.toByte()))
+        Thread.sleep(100)
+
+        for (i in 0..4) {
+            var values: ByteArray = byteArrayOf(SecureRandom.getInstanceStrong().nextInt(255).toByte(), SecureRandom.getInstanceStrong().nextInt(255).toByte(), SecureRandom.getInstanceStrong().nextInt(255).toByte())
+            tinybController.writeCharacteristic(device, characteristic, byteArrayOf(0.toByte(), i.toByte(), values.get(0), values.get(1), values.get(2)))
+        }
     }
 
 }
